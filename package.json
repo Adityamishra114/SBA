@@ -19,7 +19,6 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "postbuild": "copy public\\_redirects build\\_redirects",
     "prod": "npm run build",
     "eject": "react-scripts eject"
   },
