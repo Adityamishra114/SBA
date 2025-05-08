@@ -1,0 +1,12 @@
+.userpage-center {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.userpage-toggle-btn {
+  font-size: 1.2rem;
+  padding: 0.7rem 2rem;
+  cursor: pointer;
+}

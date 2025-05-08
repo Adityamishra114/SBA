@@ -1,0 +1,99 @@
+.payment-title {
+  text-align: left;
+  margin: 24px 0 0 24px;
+  font-size: 1.6rem;
+  font-weight: 500;
+}
+
+.payment-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.payment-box {
+  border: 1px solid #ddd;
+  padding: 32px 32px 24px 32px;
+  min-width: 340px;
+  background: #fff;
+  box-shadow: 0 2px 8px #eee;
+}
+
+.payment-tabs {
+  display: flex;
+  justify-content: flex-start;
+  gap: 48px;
+  margin-bottom: 16px;
+}
+
+.payment-tab {
+  border: none;
+  background: none;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: 400;
+  padding: 0 8px;
+  border-bottom: 2px solid transparent;
+  transition: border 0.2s;
+}
+
+.payment-tab.active {
+  font-weight: bold;
+  border-bottom: 2px solid #222;
+}
+
+.payment-methods-row {
+  display: flex;
+  gap: 0;
+  border: 1px solid #eee;
+  background: #fafafa;
+}
+
+.payment-method-col {
+  flex: 1;
+  padding: 18px 18px 8px 18px;
+  min-width: 160px;
+}
+
+.payment-method-col.selected {
+  background: #fff;
+}
+
+.payment-field {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.payment-field label {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.payment-field input {
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+}
+
+.payment-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.payment-btn-row {
+  display: flex;
+  justify-content: center;
+}
+
+.payment-btn {
+  margin-top: 8px;
+  padding: 6px 24px;
+  border: 1px solid #aaa;
+  background: #fff;
+  cursor: pointer;
+  border-radius: 2px;
+  font-size: 1rem;
+}

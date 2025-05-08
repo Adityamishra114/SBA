@@ -1,0 +1,34 @@
+.userpage-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.user-slider-container {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 350px;
+  height: 100%;
+  background: #fff;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  transition: right 0.3s;
+  z-index: 1100;
+}
+
+.user-slider-container.open {
+  right: 0;
+}
+
+.user-slider {
+  padding: 2rem;
+}
+
+.user-details h2,
+.latest-orders h2 {
+  margin-top: 0;
+}
