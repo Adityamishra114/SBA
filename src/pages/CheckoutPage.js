@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
 import { useSelector, useDispatch } from "react-redux";
-import { removeFromCart } from "../store/cartSlice";
-import { fetchAddressByPincode, clearAddress } from "../store/addressSlice";
+import { removeFromCart, clearCart } from "../store/cartSlice";
+import { fetchAddressByPincode, clearAddress, saveAddress, setSelectedAddressId } from "../store/addressSlice";
+import { createOrder } from "../store/orderSlice";
 import "./CheckoutPage.css";
 
 const addressTypes = ["Home", "Work", "Other"];
@@ -14,6 +15,7 @@ const CheckoutPage = () => {
   const cart = useSelector((state) => state.cart.items);
   const { userDetails } = useSelector((state) => state.user);
   const addressState = useSelector((state) => state.address);
+  const userId = useSelector((state) => state.user.userId) || localStorage.getItem("userId");
 
   const [address, setAddress] = useState({
     type: "Home",
@@ -70,8 +72,66 @@ const CheckoutPage = () => {
     dispatch(removeFromCart(item));
   };
 
-  const handlePayNow = () => {
-    navigate("/payment");
+  // --- MAIN LOGIC: Save address, then create order, then redirect ---
+  const handlePayNow = async () => {
+    if (!isUserValid || !isAddressValid || cart.length === 0) {
+      alert("Please fill all details and add items to cart.");
+      return;
+    }
+
+    if (!userId) {
+      alert("User ID missing. Please login again.");
+      return;
+    }
+
+    // 1. Save address to backend
+    const addressPayload = {
+      name: userDetails.name,
+      addrLine1: address.line1,
+      addrLine2: address.line2,
+      pincode: Number(address.pin),
+      city: address.city,
+      state: address.state,
+      type: address.type,
+      verified: true,
+    };
+
+    try {
+      const result = await dispatch(saveAddress(addressPayload));
+      if (saveAddress.fulfilled.match(result)) {
+        const addressId = result.payload._id;
+        dispatch(setSelectedAddressId(addressId));
+        if (!userId || !addressId || cart.length === 0) {
+          alert("User, address, or cart items missing!");
+          return;
+        }
+
+        const orderPayload = {
+          items: cart.map((item) => item._id),
+          address: addressId,
+          userId,
+        };
+        console.log("Order payload:", orderPayload);
+        const orderResult = await dispatch(createOrder(orderPayload));
+        if (createOrder.fulfilled.match(orderResult)) {
+          // 3. Redirect to payment page after successful order creation
+          navigate("/payment", {
+            state: {
+              orderId: orderResult.payload.orderId,
+              amountToPay: orderResult.payload.amountToPay,
+              items: cart,
+              address: addressPayload,
+            },
+          });
+        } else {
+          alert(orderResult.payload || "Order creation failed");
+        }
+      } else {
+        alert(result.payload || "Failed to save address");
+      }
+    } catch (err) {
+      alert("Unexpected error saving address or creating order");
+    }
   };
 
   return (
@@ -136,7 +196,6 @@ const CheckoutPage = () => {
                 <span className="address-error">{addressState.error}</span>
               )}
             </label>
-            {/* Show rest of address form only if pincode is valid */}
             {addressState.valid && (
               <>
                 <label>

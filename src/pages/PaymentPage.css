@@ -97,3 +97,8 @@
   border-radius: 2px;
   font-size: 1rem;
 }
+
+.payment-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -7,7 +7,7 @@ import {
   addUpiPayment,
   sendPaymentDetails,
 } from "../store/paymentSlice";
-import { createOrder } from "../store/orderSlice"; 
+import { createOrder } from "../store/orderSlice";
 import "./PaymentPage.css";
 
 const PaymentPage = () => {
@@ -24,19 +24,39 @@ const PaymentPage = () => {
     (state) => state.address.selectedAddressId
   );
 
+  // Validation for enabling Pay button
+  const isCardValid =
+    method === "card" &&
+    cardNumber.trim().length >= 12 &&
+    expiry.trim().length >= 4 &&
+    cvv.trim().length >= 3 &&
+    amount &&
+    Number(amount) > 0;
+
+  const isUpiValid =
+    method === "upi" &&
+    upiId.trim().length > 4 &&
+    amount &&
+    Number(amount) > 0;
+
   const handlePay = async (e) => {
     e.preventDefault();
+
+    if (!selectedAddress || !cartItems.length) {
+      alert("Please select an address and add items to cart.");
+      return;
+    }
+
     let paymentData;
     if (method === "card") {
-      paymentData = { cardNumber, expiry, cvv, amount: Number(amount) };
+      paymentData = { cardNumber, expiry, cvv, amount: Number(amount), method: "card" };
       dispatch(addCardPayment(paymentData));
     } else {
-      paymentData = { upiId, amount: Number(amount) };
+      paymentData = { upiId, amount: Number(amount), method: "upi" };
       dispatch(addUpiPayment(paymentData));
     }
 
     try {
-      // 1. Send payment details to /payment
       const paymentResult = await dispatch(sendPaymentDetails(paymentData));
       if (!sendPaymentDetails.fulfilled.match(paymentResult)) {
         alert("Payment failed!");
@@ -44,29 +64,11 @@ const PaymentPage = () => {
         return;
       }
       const payment = paymentResult.payload;
-
-      // 2. Wait 1 second, then send order details to /order
-      setTimeout(async () => {
-        const orderPayload = {
-          items: cartItems.map((item) => item._id),
-          address: selectedAddress,
-          payment: payment._id,
-        };
-        const orderResult = await dispatch(createOrder(orderPayload));
-        if (!createOrder.fulfilled.match(orderResult)) {
-          alert("Order failed!");
-          console.log("Order error:", orderResult.error);
-          return;
-        }
-        const order = orderResult.payload;
-
-        // 3. Wait another 1 second, then redirect to thank you page
-        setTimeout(() => {
-          navigate("/thankyou", {
-            state: { order: order.order, payment: payment },
-          });
-        }, 1000);
-      }, 1000);
+      navigate("/thankyou", {
+        state: {
+          payment,
+        },
+      });
     } catch (err) {
       alert("Unexpected error!");
       console.log("Unexpected error:", err);
@@ -83,12 +85,14 @@ const PaymentPage = () => {
             <button
               className={`payment-tab ${method === "card" ? "active" : ""}`}
               onClick={() => setMethod("card")}
+              type="button"
             >
               Card
             </button>
             <button
               className={`payment-tab ${method === "upi" ? "active" : ""}`}
               onClick={() => setMethod("upi")}
+              type="button"
             >
               UPI
             </button>
@@ -151,7 +155,7 @@ const PaymentPage = () => {
                   <button
                     type="submit"
                     className="payment-btn"
-                    disabled={method !== "card"}
+                    disabled={!isCardValid}
                   >
                     Pay
                   </button>
@@ -191,7 +195,7 @@ const PaymentPage = () => {
                   <button
                     type="submit"
                     className="payment-btn"
-                    disabled={method !== "upi"}
+                    disabled={!isUpiValid}
                   >
                     Pay
                   </button>

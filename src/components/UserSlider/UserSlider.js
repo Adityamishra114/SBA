@@ -1,34 +1,34 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUserById, logout } from "../../store/userSlice";
+import { getUserOrders } from "../../store/orderSlice";
 import "./UserSlider.css";
 
 const UserSlider = ({ show, onClose }) => {
   const dispatch = useDispatch();
-  const { userDetails, user, userId } = useSelector((state) => state.user);
+  // Always get userId from Redux or fallback to localStorage
+  const userId =
+    useSelector((state) => state.user.userId) || localStorage.getItem("userId");
+  const { userDetails, user } = useSelector((state) => state.user);
+  const { userOrders } = useSelector((state) => state.order);
   const isVerified = localStorage.getItem("otpVerified") === "true";
   const currentPath = window.location.pathname;
 
-  // Always fetch user details if verified or on verify-otp page
+  // Fetch user details and latest orders when slider opens and userId is available
   useEffect(() => {
     if (show && userId && (isVerified || currentPath === "/verify-otp")) {
       dispatch(fetchUserById(userId));
+      dispatch(getUserOrders(userId));
     }
   }, [dispatch, userId, isVerified, show, currentPath]);
 
   const details = userDetails || user;
 
-  // Log user details to the console
-  useEffect(() => {
-    if (details) {
-      console.log("User Details:", details);
-    }
-  }, [details]);
-
   const handleLogout = () => {
     dispatch(logout());
     localStorage.removeItem("authPhone");
     localStorage.removeItem("otpVerified");
+    localStorage.removeItem("userId");
     window.dispatchEvent(new Event("storage"));
     onClose();
   };
@@ -63,16 +63,33 @@ const UserSlider = ({ show, onClose }) => {
           <div className="latest-orders">
             <h2>Latest Orders</h2>
             <ul>
-              {(isVerified || currentPath === "/verify-otp") &&
-              details?.orders &&
-              details.orders.length > 0 ? (
-                details.orders.map((order, index) => (
-                  <li key={index}>
-                    Order ID: {order.id} - Status: {order.status}
+              {userOrders && userOrders.length > 0 ? (
+                userOrders.slice(0, 3).map((order, index) => (
+                  <li key={order._id || index} style={{ marginBottom: "18px", borderBottom: "1px solid #eee", paddingBottom: "10px" }}>
+                    <div><strong>Order ID:</strong> {order._id}</div>
+                    <div><strong>Status:</strong> {order.status || "N/A"}</div>
+                    <div><strong>Amount:</strong> ₹{order.amount || order.amountToPay || (order.total && order.total.amount) || "N/A"}</div>
+                    {order.items && order.items.length > 0 && (
+                      <div>
+                        <strong>Items:</strong>{" "}
+                        {order.items.map((item) => item.title || item.name || "Seva").join(", ")}
+                      </div>
+                    )}
+                    {order.address && (
+                      <div>
+                        <strong>Address:</strong>{" "}
+                        {(order.address.addrLine1 || order.address.line1 || "") +
+                          (order.address.city ? `, ${order.address.city}` : "")}
+                      </div>
+                    )}
+                    <div>
+                      <strong>Date:</strong>{" "}
+                      {order.createdAt ? new Date(order.createdAt).toLocaleString() : ""}
+                    </div>
                   </li>
                 ))
               ) : (
-                <li></li>
+                <li>No orders found</li>
               )}
             </ul>
           </div>

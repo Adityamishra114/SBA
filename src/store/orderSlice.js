@@ -1,19 +1,18 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { url } from "../config";
 
-// Async thunk to create order (POST)
 export const createOrder = createAsyncThunk(
   "order/createOrder",
-  async (orderData, { rejectWithValue }) => {
+  async ({ items, address, userId }, { rejectWithValue }) => {
     try {
       const res = await fetch(`${url}/api/order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData),
+        body: JSON.stringify({ items, address, userId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Order creation failed");
-      return data; // { orderId, paymentId, amountToPay, payment, order }
+      return data; // { orderId, amountToPay, order }
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -35,11 +34,28 @@ export const getOrderDetails = createAsyncThunk(
   }
 );
 
+// Async thunk to get latest orders for a user
+export const getUserOrders = createAsyncThunk(
+  "order/getUserOrders",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${url}/api/user/${userId}/orders`);
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.message || "Failed to fetch user orders");
+      return data; // Array of orders
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
 const orderSlice = createSlice({
   name: "order",
   initialState: {
     orderDetails: null,
     createdOrder: null,
+    userOrders: [],
     status: "idle",
     error: null,
   },
@@ -47,6 +63,7 @@ const orderSlice = createSlice({
     clearOrder: (state) => {
       state.orderDetails = null;
       state.createdOrder = null;
+      state.userOrders = [];
       state.status = "idle";
       state.error = null;
     },
@@ -60,7 +77,7 @@ const orderSlice = createSlice({
       })
       .addCase(createOrder.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.createdOrder = action.payload; // Save creation response
+        state.createdOrder = action.payload;
       })
       .addCase(createOrder.rejected, (state, action) => {
         state.status = "failed";
@@ -73,9 +90,22 @@ const orderSlice = createSlice({
       })
       .addCase(getOrderDetails.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.orderDetails = action.payload; // Save full order details
+        state.orderDetails = action.payload;
       })
       .addCase(getOrderDetails.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload;
+      })
+      // Get user orders
+      .addCase(getUserOrders.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(getUserOrders.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.userOrders = action.payload;
+      })
+      .addCase(getUserOrders.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
       });
@@ -84,4 +114,3 @@ const orderSlice = createSlice({
 
 export const { clearOrder } = orderSlice.actions;
 export default orderSlice.reducer;
-

@@ -22,6 +22,10 @@ const VerifyOtp = () => {
     }
     const resultAction = await dispatch(verifyOtp({ contact, otp }));
     if (verifyOtp.fulfilled.match(resultAction)) {
+      // Save userId to localStorage for later use (CheckoutPage, etc)
+      if (resultAction.payload) {
+        localStorage.setItem("userId", resultAction.payload);
+      }
       localStorage.setItem("authPhone", contact);
       localStorage.setItem("otpVerified", "true");
       dispatch(resetOtpState());
